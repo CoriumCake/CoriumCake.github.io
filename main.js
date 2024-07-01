@@ -33,11 +33,12 @@ let cactus2Img;
 let cactus3Img;
 
 //physics
-let velocityX = -8; 
-let velocityY = 0;
-let gravity = .4;
+let velocityX = -3; //cactus moving speed
+let velocityY = 2;
+let gravity = 0.15;
 
 let gameOver = false;
+let isRestarting = false;
 let score = 0;
 
 
@@ -67,13 +68,17 @@ window.onload = function () {
     setInterval(placeCactus, 1000);
     document.addEventListener('keydown', moveCat);
     document.addEventListener('touchstart', moveCat);
+    
+    document.addEventListener('keydown', restartGame);
+    document.addEventListener('click', restartGame);
+    document.addEventListener('touchstart', restartGame);
 }
 
 function moveCat(e) {
     if (gameOver) return;
 
-    if ((e.code == "Space" || e.code === "ArrowUp" || e.code == "Touchstart") && player.y == py) {
-        velocityY = -10;
+    if ((e.code == "Space" || e.code === "ArrowUp" || e.type === "touchstart") && player.y == py) {
+        velocityY = -7;
     }
 
 }
@@ -102,6 +107,8 @@ function update() {
                 context.clearRect(0, 0, screen.width, screen.height);
                 context.drawImage(pImg, player.x, player.y, player.width + 30, player.height);
             }
+            isRestarting = true; // Allow restarting the game
+            return;
         }
     }
 
@@ -152,4 +159,16 @@ function checkCollision(a, b) {
         a.x + a.width > b.x &&
         a.y < b.y + b.height &&
         a.y + a.height > b.y;
+}
+
+function restartGame(e) {
+    if (isRestarting) {
+        isRestarting = false;
+        gameOver = false;
+        score = 0;
+        player.y = py;
+        velocityY = 0;
+        cactusArray = [];
+        pImg.src = "./assets/cat1.png";
+    }
 }
