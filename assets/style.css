@@ -1,0 +1,10 @@
+body {
+    font-family: 'Courier New', Courier, monospace;
+    text-align: center;
+    background-color: #f7f7f701;
+}
+
+#main-screen {
+    background-color: lightgray;
+    border-bottom: 1px solid black;
+}
