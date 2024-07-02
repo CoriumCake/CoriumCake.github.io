@@ -1,10 +1,12 @@
 body {
     font-family: 'Courier New', Courier, monospace;
     text-align: center;
-    background-color: #f7f7f701;
+    background-color: #efebeb;
 }
 
 #main-screen {
     background-color: lightgray;
     border-bottom: 1px solid black;
+    background-image: url('sut1.jpg');
+    background-size: 100%;
 }
