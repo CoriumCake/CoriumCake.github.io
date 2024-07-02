@@ -3,44 +3,52 @@ const screenWidth = 750;
 const screenHeight = 250;
 let context;
 
-//player
+// Player
 const pWidth = 88;
 const pHeight = 94;
 const px = 50;
 const py = screenHeight - pHeight;
 let pImg;
 
+const hitboxWidth = 60;
+const hitboxHeight = 80;
+const hitboxOffsetX = (pWidth - hitboxWidth) / 2;
+const hitboxOffsetY = (pHeight - hitboxHeight) / 2;
+
 let player = {
     x: px,
     y: py,
     width: pWidth,
-    height: pHeight
-}
+    height: pHeight,
+    hitbox: {
+        x: px + hitboxOffsetX,
+        y: py + hitboxOffsetY,
+        width: hitboxWidth,
+        height: hitboxHeight
+    }
+};
 
-//cactus
+// Cactus
 let cactusArray = [];
-
-const catus1Width = 34;
-const catus2Width = 69;
-const catus3Width = 102;
-
+const cactusWidth = [34, 69, 102];
 const cactusHeight = 70;
-const cactusX = 700;
+const cactusX = screenWidth;
 const cactusY = screenHeight - cactusHeight;
 
-let cactus1Img;
-let cactus2Img;
-let cactus3Img;
-
-//physics
-let velocityX = -3; //cactus moving speed
-let velocityY = 2;
-let gravity = 0.15;
-
+let cactusImg = [];
 let gameOver = false;
 let isRestarting = false;
 let score = 0;
 
+// Physics
+let velocityX = -3;
+let velocityY = 0;
+let gravity = 0.15;
+
+// Sound
+let audioContext;
+let jumpSoundBuffer;
+let deathSoundBuffer;
 
 window.onload = function () {
     screen = document.getElementById('main-screen');
@@ -48,30 +56,56 @@ window.onload = function () {
     screen.width = screenWidth;
     context = screen.getContext('2d');
 
-    //draw cat
-    pImg = new Image();
-    pImg.src = "./assets/cat1.png";
-    pImg.onload = function () {
-    }
+    // Load images
+    pImg = loadImage("./assets/cat1.png");
 
-    //draw cactus
-    cactus1Img = new Image();
-    cactus1Img.src = "./assets/cactus1.png";
+    cactusImg[0] = loadImage("./assets/cactus1.png");
+    cactusImg[1] = loadImage("./assets/cactus2.png");
+    cactusImg[2] = loadImage("./assets/cactus3.png");
 
-    cactus2Img = new Image();
-    cactus2Img.src = "./assets/cactus2.png";
+    // Load sounds
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    loadSound('./assets/jump.mp3', function(buffer) {
+        jumpSoundBuffer = buffer;
+    });
+    loadSound('./assets/death.mp3', function(buffer) {
+        deathSoundBuffer = buffer;
+    });
 
-    cactus3Img = new Image();
-    cactus3Img.src = "./assets/cactus3.png";
-
+    // Start game
     requestAnimationFrame(update);
     setInterval(placeCactus, 1000);
     document.addEventListener('keydown', moveCat);
     document.addEventListener('touchstart', moveCat);
-    
     document.addEventListener('keydown', restartGame);
     document.addEventListener('click', restartGame);
     document.addEventListener('touchstart', restartGame);
+};
+
+function loadImage(src) {
+    const img = new Image();
+    img.src = src;
+    return img;
+}
+
+function loadSound(url, callback) {
+    const request = new XMLHttpRequest();
+    request.open('GET', url, true);
+    request.responseType = 'arraybuffer';
+
+    request.onload = function() {
+        audioContext.decodeAudioData(request.response, function(buffer) {
+            callback(buffer);
+        });
+    };
+    request.send();
+}
+
+function playSound(buffer) {
+    const source = audioContext.createBufferSource();
+    source.buffer = buffer;
+    source.connect(audioContext.destination);
+    source.start(0);
 }
 
 function moveCat(e) {
@@ -79,75 +113,68 @@ function moveCat(e) {
 
     if ((e.code == "Space" || e.code === "ArrowUp" || e.type === "touchstart") && player.y == py) {
         velocityY = -7;
+        playSound(jumpSoundBuffer);
     }
-
 }
 
 function update() {
-    requestAnimationFrame(update);
-
-    if (gameOver) return;
+    if (!gameOver) {
+        requestAnimationFrame(update);
+    }
 
     context.clearRect(0, 0, screen.width, screen.height);
 
-    //cat
+    // Update player position
     velocityY += gravity;
-    player.y = Math.min(player.y + velocityY, py)
+    player.y = Math.min(player.y + velocityY, py);
+    player.hitbox.y = player.y + hitboxOffsetY;
+
+    // Draw player
     context.drawImage(pImg, player.x, player.y, player.width, player.height);
 
-    //cactus
-    for (let i = 0; i < cactusArray.length; i++) {
+    // Update and draw cacti
+    for (let i = cactusArray.length - 1; i >= 0; i--) {
         let cactus = cactusArray[i];
         cactus.x += velocityX;
+        if (cactus.x + cactus.width < 0) {
+            cactusArray.splice(i, 1);
+            continue;
+        }
         context.drawImage(cactus.img, cactus.x, cactus.y, cactus.width, cactus.height);
-        if (checkCollision(player, cactus)) {
+
+        if (checkCollision(player.hitbox, cactus)) {
             gameOver = true;
+            playSound(deathSoundBuffer); // Play death sound
             pImg.src = "./assets/dead1.png";
             pImg.onload = function () {
                 context.clearRect(0, 0, screen.width, screen.height);
-                context.drawImage(pImg, player.x, player.y, player.width + 30, player.height);
-            }
-            isRestarting = true; // Allow restarting the game
+                context.drawImage(pImg, player.x, player.y, player.width, player.height);
+            };
+            isRestarting = true;
             return;
         }
     }
 
-    //score
+    // Draw score
     context.fillStyle = "black";
     context.font = "20px courier";
-    score++;
     context.fillText(score, 5, 20);
+    score++;
 }
 
 function placeCactus() {
-
     if (gameOver) return;
 
+    let cactusIndex = Math.floor(Math.random() * 3);
     let cactus = {
-        img: null,
+        img: cactusImg[cactusIndex],
         x: cactusX,
         y: cactusY,
-        width: null,
+        width: cactusWidth[cactusIndex],
         height: cactusHeight
-    }
-
-    let placeCactusChance = Math.random();
-
-    if (placeCactusChance > .90) { //10% chance of placing cactus3
-        cactus.img = cactus3Img;
-        cactus.width = catus3Width;
-        cactusArray.push(cactus);
-    }
-    else if (placeCactusChance > .70) { //30% chance of placing cactus2
-        cactus.img = cactus2Img;
-        cactus.width = catus2Width;
-        cactusArray.push(cactus);
-    }
-    else if (placeCactusChance > .50) { //50% chance of placing cactus1
-        cactus.img = cactus1Img;
-        cactus.width = catus1Width;
-        cactusArray.push(cactus);
-    }
+    };
+    
+    cactusArray.push(cactus);
 
     if (cactusArray.length > 5) {
         cactusArray.shift();
@@ -167,8 +194,10 @@ function restartGame(e) {
         gameOver = false;
         score = 0;
         player.y = py;
+        player.hitbox.y = py + hitboxOffsetY;
         velocityY = 0;
         cactusArray = [];
         pImg.src = "./assets/cat1.png";
+        requestAnimationFrame(update);
     }
 }
