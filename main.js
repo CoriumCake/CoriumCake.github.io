@@ -50,6 +50,9 @@ let audioContext;
 let jumpSoundBuffer;
 let deathSoundBuffer;
 
+// Timing
+let lastTimestamp = 0;
+
 window.onload = function () {
     screen = document.getElementById('main-screen');
     screen.height = screenHeight;
@@ -120,16 +123,20 @@ function moveCat(e) {
     }
 }
 
-function update() {
+function update(timestamp) {
     if (!gameOver) {
         requestAnimationFrame(update);
     }
+
+    // Calculate deltaTime
+    const deltaTime = (timestamp - lastTimestamp) / 1000; // Convert to seconds
+    lastTimestamp = timestamp;
 
     context.clearRect(0, 0, screen.width, screen.height);
 
     // Update player position
     velocityY += gravity;
-    player.y = Math.min(player.y + velocityY, py);
+    player.y = Math.min(player.y + velocityY * deltaTime * 60, py); // Scaling velocity by deltaTime
     player.hitbox.y = player.y + hitboxOffsetY;
 
     // Draw player
@@ -138,7 +145,7 @@ function update() {
     // Update and draw cacti
     for (let i = cactusArray.length - 1; i >= 0; i--) {
         let cactus = cactusArray[i];
-        cactus.x += velocityX;
+        cactus.x += velocityX * deltaTime * 60; // Scaling velocity by deltaTime
         if (cactus.x + cactus.width < 0) {
             cactusArray.splice(i, 1);
             continue;

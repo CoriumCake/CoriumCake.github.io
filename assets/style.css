@@ -8,5 +8,7 @@ body {
     background-color: lightgray;
     border-bottom: 1px solid black;
     background-image: url('sut1.jpg');
-    background-size: 100%;
+    background-size: cover; /* More efficient background size */
+    background-repeat: no-repeat; /* Ensure the image is not repeated */
+    background-position: center; /* Center the image */
 }
