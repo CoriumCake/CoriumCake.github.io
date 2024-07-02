@@ -8,7 +8,7 @@ const pWidth = 88;
 const pHeight = 94;
 const px = 50;
 const py = screenHeight - pHeight;
-let pImg;
+let pImg, pJumpImg, pDeadImg;
 
 const hitboxWidth = 60;
 const hitboxHeight = 80;
@@ -58,6 +58,8 @@ window.onload = function () {
 
     // Load images
     pImg = loadImage("./assets/cat1.png");
+    pJumpImg = loadImage("./assets/cat2.png");
+    pDeadImg = loadImage("./assets/dead1.png");
 
     cactusImg[0] = loadImage("./assets/cactus1.png");
     cactusImg[1] = loadImage("./assets/cactus2.png");
@@ -114,6 +116,7 @@ function moveCat(e) {
     if ((e.code == "Space" || e.code === "ArrowUp" || e.type === "touchstart") && player.y == py) {
         velocityY = -7;
         playSound(jumpSoundBuffer);
+        pImg = pJumpImg; // Change to jump image
     }
 }
 
@@ -145,7 +148,7 @@ function update() {
         if (checkCollision(player.hitbox, cactus)) {
             gameOver = true;
             playSound(deathSoundBuffer); // Play death sound
-            pImg.src = "./assets/dead1.png";
+            pImg = pDeadImg; // Change to dead image
             pImg.onload = function () {
                 context.clearRect(0, 0, screen.width, screen.height);
                 context.drawImage(pImg, player.x, player.y, player.width, player.height);
@@ -153,6 +156,11 @@ function update() {
             isRestarting = true;
             return;
         }
+    }
+
+    // Check if player lands
+    if (player.y == py && pImg === pJumpImg) {
+        pImg = loadImage("./assets/cat1.png"); // Revert to normal image
     }
 
     // Draw score
@@ -197,7 +205,7 @@ function restartGame(e) {
         player.hitbox.y = py + hitboxOffsetY;
         velocityY = 0;
         cactusArray = [];
-        pImg.src = "./assets/cat1.png";
+        pImg = loadImage("./assets/cat1.png");
         requestAnimationFrame(update);
     }
 }
